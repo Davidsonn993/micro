@@ -15,24 +15,43 @@ void main(void) {
     GPIO = 0x00;          // Poner todos los pines en bajo
     ANSEL = 0x00;         // Deshabilitar entradas analógicas
 
-    unsigned int numero=99 ;  // Número predeterminado para mostrar
+    unsigned int numero;  // Número predeterminado para mostrar
     unsigned char decenas, unidades; // Variables para almacenar decenas y unidades
-   
-    
-    while (1) {
-         // Leer el estado del botón en GPIO3
-        if (GP3) {  // Si GPIO3 está en alto (botón presionado)
-            numero = simple_random();
+    unsigned char boton_contador = 0;  // Contador de presiones de botón
+    unsigned char boton_presionado = 0;  // Estado del botón: 0 = no presionado, 1 = presionado 
+
+while (1) {
+        // Leer el estado del botón en GPIO3
+        if (GP3 && !boton_presionado) {  // Si GPIO3 está en alto (botón presionado) y no estaba presionado antes
+            delay_ms(50);  // Pequeño retardo para debounce
+            
+            // Comprobar nuevamente el estado del botón después del retardo
+            if (GP3) {  // Si aún está presionado, confirmar la presión
+                boton_presionado =1;  // Marcar como presionado
+                boton_contador++;
+
+                if (boton_contador <= 10) {
+                    numero = simple_random();  // Generar número aleatorio
+                } else {
+                    numero =99 ;  // Mostrar 11 si el contador excede 10
+                    boton_contador = 0;  // Reiniciar el contador
+                }
+            }
         }
 
-        // Separa decenas y unidades
+        if (!GP3) {  // Si GPIO3 está en bajo (botón no presionado)
+            boton_presionado = 0;  // Marcar como no presionado
+        }
+
+        // Separar decenas y unidades
         decenas = numero / 10;
         unidades = numero % 10;
 
-        // Mostrar el número en el display por 3 segundos
+        // Mostrar el número en el display
         display_number(decenas, unidades);
     }
 }
+  
 
 void delay_ms(unsigned int ms) {
     unsigned int i, j;
@@ -68,7 +87,7 @@ void display_number(unsigned char decenas, unsigned char unidades ) {
                                   (unidades == 6) ? 0b0000110 :
                                   (unidades == 7) ? 0b0000111 :
                                   (unidades == 8) ? 0b0001000 :
-                                  0b0001001;  // Para unidades 9
+                                  0b0010001;  // Para unidades 9
 
    
        // Mostrar decenas
